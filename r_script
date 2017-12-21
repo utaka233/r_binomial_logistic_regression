@@ -53,7 +53,7 @@ logistic_reg <- function(x, y, eta, lambda=0, epoch, batch, test_size=0.2){    #
 # results
 num_epoch <- 300
 res_naive <- logistic_reg(x=scale(as.matrix(data[,1:2])), y=data$class, eta=0.01, epoch=num_epoch, batch=80, test_size=0.3)
-res_L2 <- logistic_reg(x=as.matrix(data[,1:2]), y=data$class, eta=0.01, lambda=0.1, epoch=num_epoch, batch=80, test_size=0.3)
+res_L2 <- logistic_reg(x=scale(as.matrix(data[,1:2])), y=data$class, eta=0.01, lambda=0.1, epoch=num_epoch, batch=80, test_size=0.3)
 
 library(ggplot2)
 epoch <- rep(1:num_epoch, length=4*num_epoch)
