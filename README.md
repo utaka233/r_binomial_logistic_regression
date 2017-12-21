@@ -1,0 +1,2 @@
+# r_binomial_logistic_regression
+二値ロジスティック回帰の学習の様子の観察 / 精度の確認の仕方などをまとめたR script
