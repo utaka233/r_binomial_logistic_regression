@@ -1,0 +1,66 @@
+# generating demo-data
+library(MASS)
+A <- mvrnorm(100, c(-1,-1), matrix(c(4,0.2*1*2,0.2*1*2,1),2,2))
+B <- mvrnorm(100, c(1,1), matrix(c(1,0.2*1*2,0.2*1*2,4),2,2))
+AB <- rbind(A,B)
+class <- rep(c("A","B"),each=100)
+data <- data.frame(AB, class)
+colnames(data) <- c("x1", "x2", "class")
+
+# checking data
+head(data)
+summary(data)
+plot(data[,1:2],col=data$class)
+
+# labeling
+levels(data$class) <- c("0","1"); data$class <- 1-as.numeric(as.character(data$class))    # positive / negative
+head(data)
+
+# binomial logistic regression
+logistic_reg <- function(x, y, eta, lambda=0, epoch, batch, test_size=0.2){    # ncol(x)=2, y in c(0,1).
+  results <- NULL    # null vector
+  train_size <- batch*(1-test_size); test_size <- batch-train_size    # nunmber of train_test_split
+  X <- cbind(rep(c(1),length=nrow(x)),x)    # data matrix
+  
+  w_initial <- rnorm(3,0,1); w <- w_initial    # initial weight
+  for(i in 1:epoch){
+    # mini_bach making
+    index <- sample(1:batch, replace=FALSE)    # mini_batch
+    index_train <- sample(index, train_size); index_test <- setdiff(index, index_train)    # index of train_test_split
+    X_train <- X[index_train,]; y_train <- y[index_train]; X_test <- X[index_test,]; y_test <- y[index_test]    # train_test_split
+    
+    # learning
+    prob_yhat_train <- exp(X_train%*%w)/(1+exp(X_train%*%w))    # activate : softmax function
+    yhat_train <- prob_yhat_train>0.5; yhat_train[yhat_train==TRUE] <- 1; yhat_train[yhat_train==FALSE] <- 0    # prediction of classes
+    cross_entropy_train <- -(1/train_size)*sum(yhat_train*log(prob_yhat_train)+(1-yhat_train)*log(1-prob_yhat_train))    # train error
+    w <- w-eta*(as.numeric(t(X_train)%*%as.numeric(prob_yhat_train-y_train))-2*lambda*w)    # probabilistic gradient descend
+    
+    # accuary
+    prob_yhat_test <- exp(X_test%*%w)/(1+exp(X_test%*%w))    # activate : softmax function
+    yhat_test <- prob_yhat_test>0.5; yhat_test[yhat_test==TRUE] <- 1; yhat_test[yhat_test==FALSE] <- 0    # prediction of classes
+    cross_entropy_test <- -(1/test_size)*sum(yhat_test*log(prob_yhat_test)+(1-yhat_test)*log(1-prob_yhat_test))    # train error
+    
+    # data of results
+    results <- rbind(results, c(w,cross_entropy_train,cross_entropy_test))    # results
+    # Sys.sleep(1); plot(X[,2],X[,3],col=(y+1)); abline(a=-w[1]/w[3],b=-w[2]/w[3])    # aspects of learning
+  }
+  
+  results <- data.frame(results)
+  colnames(results) <- c("w0","w1","w2","cross_entropy_train","cross_entropy_test")
+  results
+}
+
+# results
+num_epoch <- 300
+res_naive <- logistic_reg(x=scale(as.matrix(data[,1:2])), y=data$class, eta=0.01, epoch=num_epoch, batch=80, test_size=0.3)
+res_L2 <- logistic_reg(x=as.matrix(data[,1:2]), y=data$class, eta=0.01, lambda=0.1, epoch=num_epoch, batch=80, test_size=0.3)
+
+library(ggplot2)
+epoch <- rep(1:num_epoch, length=4*num_epoch)
+case1 <- rep(c("naive", "L2"), each=2*num_epoch)
+case2 <- rep(c("train_naive", "test_naive", "train_L2", "test_L2"), each=num_epoch)
+error <- c(res_naive$cross_entropy_train, res_naive$cross_entropy_test, res_L2$cross_entropy_train, res_L2$cross_entropy_test)
+res <- data.frame(epoch, case1, case2, error)
+res$case1 <- factor(res$case1, levels=c("naive", "L2"))
+res$case2 <- factor(res$case2, levels=c("train_naive", "test_naive", "train_L2", "test_L2"))
+ggplot(res, aes(x=epoch, y=error, color=case2))+geom_line(alpha=1)+facet_wrap(~case1)    # graph of cross entropy error
