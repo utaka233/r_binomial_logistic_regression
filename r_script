@@ -32,13 +32,13 @@ logistic_reg <- function(x, y, eta, lambda=0, epoch, batch, test_size=0.2){    #
     # learning
     prob_yhat_train <- exp(X_train%*%w)/(1+exp(X_train%*%w))    # activate : softmax function
     yhat_train <- prob_yhat_train>0.5; yhat_train[yhat_train==TRUE] <- 1; yhat_train[yhat_train==FALSE] <- 0    # prediction of classes
-    cross_entropy_train <- -(1/train_size)*sum(y_train*log(prob_yhat_train)+(1-y_train)*log(1-prob_yhat_train))    # test error
+    cross_entropy_train <- -(1/train_size)*sum(y_train*log(prob_yhat_train)+(1-y_train)*log(1-prob_yhat_train))    # train error
     w <- w-eta*(as.numeric(t(X_train)%*%as.numeric(prob_yhat_train-y_train))-2*lambda*w)    # gradient descend method
     
     # accuary
     prob_yhat_test <- exp(X_test%*%w)/(1+exp(X_test%*%w))    # activate : softmax function
     yhat_test <- prob_yhat_test>0.5; yhat_test[yhat_test==TRUE] <- 1; yhat_test[yhat_test==FALSE] <- 0    # prediction of classes
-    cross_entropy_test <- -(1/test_size)*sum(y_test*log(prob_yhat_test)+(1-y_test)*log(1-prob_yhat_test))    # train error
+    cross_entropy_test <- -(1/test_size)*sum(y_test*log(prob_yhat_test)+(1-y_test)*log(1-prob_yhat_test))    # test error
     
     # data of results
     results <- rbind(results, c(w,cross_entropy_train,cross_entropy_test))    # results
